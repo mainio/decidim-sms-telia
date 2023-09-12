@@ -36,8 +36,6 @@ module Decidim
       end
 
       class Gateway
-        include TokenGenerator
-
         attr_reader :phone_number, :code
 
         def initialize(phone_number, code)

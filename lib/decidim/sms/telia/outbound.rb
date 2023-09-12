@@ -5,8 +5,7 @@ module Decidim
     module Telia
       class Geteway
         def initialize(authorization)
-          @authorization ||= authorization
-
+          @authorization = authorization
         end
 
         def send_message!(options)
@@ -39,15 +38,12 @@ module Decidim
           response = http.request(request)
 
           if response.code.to_i == 200
-            puts 'Request successful!'
-            puts "Response body: #{response.body}"
+            puts "Request successful!"
           else
             puts "Request failed with code: #{response.code}"
-            puts "Response body: #{response.body}"
           end
+          puts "Response body: #{response.body}"
         end
-
-        private
       end
     end
   end

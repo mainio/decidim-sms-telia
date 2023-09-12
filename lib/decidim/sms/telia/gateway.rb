@@ -52,7 +52,7 @@ module Decidim
 
         def deliver_code
           track_delivery do |delivery|
-            request = create_message!
+            request = create_message!(delivery.callback_data)
 
             response = http.request(request)
 
@@ -83,7 +83,7 @@ module Decidim
           @client ||= ::Telia::REST::Client.new(@account_sid, @auth_token)
         end
 
-        def create_message!
+        def create_message!(callback_data)
           uri = URI.parse("https://api.opaali.telia.fi/production/messaging/v1/outbound/#{@telia_sender}/requests")
 
           http = Net::HTTP.new(uri.host, uri.port)
@@ -104,11 +104,11 @@ module Decidim
               receiptRequest: {
                 notifyURL: options[:notify_url],
                 notificationFormat: "JSON",
-                callbackData:
+                callbackData: callback_data
               }
             }
           }.to_json
-          response
+          request
         end
 
         def track_delivery

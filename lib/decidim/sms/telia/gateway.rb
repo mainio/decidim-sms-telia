@@ -97,7 +97,10 @@ module Decidim
               },
               senderName: @telia_sender_name,
               receiptRequest: {
-                notifyURL: options[:notify_url],
+                notifyURL: Decidim::EngineRouter.new(
+                  "decidim_sms_telia",
+                  { host: org.host }
+                ).delivery_url(callback_data: callback_data),
                 notificationFormat: "JSON",
                 callbackData: callback_data
               }

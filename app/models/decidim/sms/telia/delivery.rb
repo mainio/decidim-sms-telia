@@ -5,12 +5,12 @@ module Decidim
     module Telia
       # The data store for a Delivery status of messages being sent to the users
       class Delivery < Telia::ApplicationRecord
-        before_create :generate_callback_code
+        before_create :generate_callback_data
 
-        def generate_callback_code
+        def generate_callback_data
           loop do
-            self.callback_code = generate_digest
-            if ::Decidim::Sms::Telia::Delivery.find_by(callback_code: callback_code).blank?
+            self.callback_data = generate_digest
+            if ::Decidim::Sms::Telia::Delivery.find_by(callback_data: callback_data).blank?
               save!
             end
           end

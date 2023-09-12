@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateDecidimSmsTeliaDeliveries < ActiveRecord::Migration[6.1]
   def change
     create_table :decidim_sms_telia_deliveries do |t|

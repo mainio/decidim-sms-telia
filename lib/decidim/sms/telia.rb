@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "telia-ruby"
-
 require "decidim/sms/telia/engine"
 
 module Decidim

@@ -40,11 +40,10 @@ module Decidim
 
         attr_reader :phone_number, :code
 
-        def initialize(phone_number, code, organization: nil)
+        def initialize(phone_number, code)
           @phone_number = phone_number
           @code = code
 
-          @organization ||= organization
           @authorization ||= Rails.application.secrets.telia[:telia_authorization]
           @telia_sender ||= Rails.application.secrets.telia[:telia_sender_address]
           @telia_sender_name ||= Rails.application.secrets.telia[:telia_sender_name]
@@ -54,7 +53,7 @@ module Decidim
           track_delivery do |delivery|
             request = create_message!(delivery.callback_data)
 
-            response = http.request(request)
+            response = JSON.parse(http.request(request))
 
             if response
               delivery.update!(
@@ -77,8 +76,6 @@ module Decidim
 
         private
 
-        attr_reader :organization
-
         def client
           @client ||= ::Telia::REST::Client.new(@account_sid, @auth_token)
         end
@@ -100,7 +97,7 @@ module Decidim
               outboundSMSBinaryMessage: {
                 message: @code
               },
-              senderName: "Telia",
+              senderName: @telia_sender_name,
               receiptRequest: {
                 notifyURL: options[:notify_url],
                 notificationFormat: "JSON",

@@ -19,6 +19,5 @@ Gem::Specification.new do |s|
   s.files = Dir["{app,config,lib}/**/*", "LICENSE-AGPLv3.txt", "Rakefile", "README.md"]
 
   s.add_dependency "decidim-core", Decidim::Sms::Telia.decidim_version
-  s.add_dependency "telia-ruby", "~> 5.72.0"
   s.metadata["rubygems_mfa_required"] = "true"
 end

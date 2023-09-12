@@ -43,21 +43,22 @@ module Decidim
         def initialize(phone_number, code, organization: nil)
           @phone_number = phone_number
           @code = code
-          @organization = organization
-          @account_sid ||= Rails.application.secrets.telia[:telia_account_sid]
-          @auth_token ||= Rails.application.secrets.telia[:telia_auth_token]
-          @telia_sender ||= Rails.application.secrets.telia[:telia_sender]
+
+          @organization ||= organization
+          @authorization ||= Rails.application.secrets.telia[:telia_authorization]
+          @telia_sender ||= Rails.application.secrets.telia[:telia_sender_address]
+          @telia_sender_name ||= Rails.application.secrets.telia[:telia_sender_name]
         end
 
         def deliver_code
           track_delivery do |delivery|
-            create_message!
+            request = create_message!
 
-            response = client.http_client.last_response
+            response = http.request(request)
 
             if response
               delivery.update!(
-                to: response.body["to"],
+                to: @phone_number,
                 sid: response.body["sid"],
                 status: response.body["status"]
               )
@@ -83,25 +84,37 @@ module Decidim
         end
 
         def create_message!
-          options = {}.tap do |opt|
-            opt[:body] = @code
-            opt[:from] = @telia_sender
-            opt[:to] = @phone_number
-            if @organization
-              opt[:status_callback] = Decidim::EngineRouter.new(
-                "decidim_sms_telia",
-                { host: @organization.host }
-              ).delivery_url(token: generate_token(@organization.host))
-            end
-          end
-          client.messages.create(**options)
+          uri = URI.parse("https://api.opaali.telia.fi/production/messaging/v1/outbound/#{@telia_sender}/requests")
+
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+
+          request = ::Net::HTTP::Post.new(uri.path, "Content-Type" => "application/json")
+
+          request["Authorization"] = "Bearer #{@authorization}"
+
+          request.body = {
+            outboundMessageRequest: {
+              address: @phone_number,
+              senderAddress: @sender_address,
+              outboundSMSBinaryMessage: {
+                message: @code
+              },
+              senderName: "Telia",
+              receiptRequest: {
+                notifyURL: options[:notify_url],
+                notificationFormat: "JSON",
+                callbackData:
+              }
+            }
+          }.to_json
+          response
         end
 
         def track_delivery
           yield Delivery.create(
             from: @telia_sender,
             to: @phone_number,
-            body: @code,
             status: ""
           )
         end

@@ -1,0 +1,8 @@
+---
+sv:
+  decidim:
+    sms:
+      telia:
+        gateway:
+          errors:
+            policy_error: "Det gick inte att skicka SMS. %{message} (%{code})"

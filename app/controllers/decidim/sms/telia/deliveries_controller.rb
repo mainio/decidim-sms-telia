@@ -4,8 +4,6 @@ module Decidim
   module Sms
     module Telia
       class DeliveriesController < Decidim::Sms::Telia::ApplicationController
-        include Decidim::Sms::Telia::TokenGenerator
-
         skip_before_action :verify_authenticity_token
 
         def update

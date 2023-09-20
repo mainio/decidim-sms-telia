@@ -12,7 +12,7 @@ module Decidim
 
         routes do
           scope "/sms/telia" do
-            post :delivery, to: "deliveries#update"
+            match :delivery, to: "deliveries#update", via: [:get, :post]
           end
         end
 

@@ -22,7 +22,7 @@ module Decidim
           end
         end
 
-        initializer "sms_telia.configure_gateway" do
+        initializer "sms_telia.configure_gateway", before: :load_config_initializers do
           Decidim.config.sms_gateway_service = "Decidim::Sms::Telia::Gateway"
         end
 

@@ -145,7 +145,11 @@ module Decidim
         end
 
         def policy_error(explanation)
-          I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: explanation[0], code: explanation[1])
+          if explanation
+            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: explanation[0], code: explanation[1])
+          else
+            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: "", code: "")
+          end
         end
 
         def log_policy_error(message, code)

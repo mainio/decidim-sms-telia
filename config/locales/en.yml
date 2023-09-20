@@ -1,11 +1,8 @@
 ---
 en:
   decidim:
-    components:
-      sms-telia:
-        name: Sms-telia
     sms:
       telia:
         gateway:
           errors:
-            policy_error: "The following error ocurred: %{message}, the error code is:%{code}"
+            policy_error: "Failed to send the SMS message. %{message} (%{code})"

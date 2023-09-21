@@ -77,6 +77,7 @@ module Decidim
 
             http.request(request)
           end
+          token_instance.revoke_token
           if %w(200 201 202).include?(response.code)
             [parse_json(response.body), "sent"]
           else

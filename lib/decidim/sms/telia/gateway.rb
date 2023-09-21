@@ -90,7 +90,7 @@ module Decidim
         end
 
         def token_instance
-          TokenManager.new
+          @token_instance ||= TokenManager.new
         end
 
         def request_body(callback_data)
@@ -139,10 +139,6 @@ module Decidim
 
           enque_message_delivery if exception_code == "POL3003"
           raise TeliaPolicyError.new("Telia Policy error", exception_code)
-          # raise TeliaPolicyError.new("Telia Policy error", exception_code) unless exception_code == "POL3003"
-
-          # enque_message_delivery
-          # [nil, "qeueued"]
         end
 
         def policy_error(explanation)

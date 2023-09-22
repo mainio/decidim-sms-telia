@@ -6,7 +6,7 @@ describe Decidim::Sms::Telia::DeliveriesController, type: :controller do
   routes { Decidim::Sms::Telia::Engine.routes }
 
   let!(:organization) { create(:organization) }
-  let!(:delivery) { create(:telia_sms_delivery) }
+  let!(:delivery) { create(:telia_sms_delivery, :sent) }
 
   before do
     request.env["decidim.current_organization"] = organization

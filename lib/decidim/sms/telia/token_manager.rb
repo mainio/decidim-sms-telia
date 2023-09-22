@@ -34,7 +34,7 @@ module Decidim
           http.use_ssl = true
           http.set_debug_output($stdout) if debug
           response = nil
-          http.start do |http|
+          http.start do
             request = Net::HTTP::Post.new(uri.request_uri)
             request.set_form_data("token" => @token["access_token"])
             request["Authorization"] = @credentials

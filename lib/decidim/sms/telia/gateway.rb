@@ -58,7 +58,7 @@ module Decidim
 
         def deliver_code
           track_delivery do |delivery|
-            response, status = create_message!(delivery.callback_data)
+            response, status = create_message!(delivery)
             resource_url = response&.dig("resourceReference", "resourceURL")
 
             delivery.update!(
@@ -70,16 +70,6 @@ module Decidim
           true
         end
 
-        def notify_token_for(delivery, number)
-          Digest::MD5.hexdigest(
-            [
-              delivery.id.to_s,
-              number,
-              Rails.application.secrets.secret_key_base
-            ].join(":")
-          )
-        end
-
         private
 
         attr_reader :debug
@@ -88,7 +78,7 @@ module Decidim
           Rails.application.secrets.telia
         end
 
-        def create_message!(callback_data)
+        def create_message!(delivery)
           authorization_token = token_instance.generate_token
 
           # Suggestion from Telia is to have a short delay before utilizing this
@@ -103,7 +93,7 @@ module Decidim
           response = nil
           http.start do
             request = Net::HTTP::Post.new(send_uri.request_uri)
-            request.body = request_body(callback_data)
+            request.body = request_body(delivery)
             request["Authorization"] = "Bearer #{authorization_token}"
             request["Accept"] = "application/json"
             request["Content-Type"] = "application/json"
@@ -129,7 +119,7 @@ module Decidim
           @token_instance ||= TokenManager.new(debug: debug)
         end
 
-        def request_body(callback_data)
+        def request_body(delivery)
           {
             "outboundMessageRequest" => {
               "address" => [phone_number],
@@ -142,14 +132,14 @@ module Decidim
                   { host: organization.host }
                 ).delivery_url(delivery.id),
                 "notificationFormat" => "JSON",
-                "callbackData" => callback_data
+                "callbackData" => delivery.callback_data
               }
             }
           }.to_json
         end
 
         def outbound_uri
-          URI.parse("https://api.opaali.telia.fi/#{mode}/messaging/v1/outbound/#{CGI.escape(telia_sender)}/requests")
+          URI.parse("https://api.opaali.telia.fi/#{mode}/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests")
         end
 
         def mode
@@ -159,7 +149,7 @@ module Decidim
 
         def track_delivery
           yield Delivery.create(
-            from: remove_prefix(telia_sender),
+            from: remove_prefix(sender_address),
             to: remove_prefix(phone_number),
             status: "initiated"
           )

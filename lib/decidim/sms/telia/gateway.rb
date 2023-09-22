@@ -37,6 +37,12 @@ module Decidim
         end
       end
 
+      class TeliaServerError < GatewayError
+        def initialize(message = "Gateway server error", _error_code = 0)
+          super(message, :server_error)
+        end
+      end
+
       class Gateway
         attr_reader :phone_number, :code, :organization, :telia_sender, :telia_sender_name
 
@@ -83,6 +89,9 @@ module Decidim
           else
             handle_policy_exception(parse_json(response.body))
           end
+        rescue JSON::ParserError => e
+          log_server_error("Json parse error from server", e.code)
+          raise TeliaServerError.new("JSON::ParserError server error from telia", e.code)
         end
 
         def parse_json(response)
@@ -151,8 +160,17 @@ module Decidim
 
         def log_policy_error(message, code)
           Rails.logger.error "Telia error -- Telia failed to deliver the code"
+          log_base_error(message, code)
+        end
+
+        def log_base_error(message, code)
           Rails.logger.error "Telia Error: #{code}"
           Rails.logger.error message
+        end
+
+        def log_server_error(message, code)
+          Rails.logger.error "Telia server error -- Telia failed to deliver the code"
+          log_base_error(message, code)
         end
 
         def enque_message_delivery

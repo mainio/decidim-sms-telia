@@ -9,17 +9,8 @@ module Decidim
         end
 
         def generate_token
-          uri = uri_for("token")
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = true
-          http.set_debug_output($stdout) if debug
-          response = nil
-          http.start do
-            request = Net::HTTP::Post.new(uri.request_uri)
+          response = Http.new(uri_for("token"), authorization: authorization_header, debug: debug).post do |request|
             request.set_form_data("grant_type" => "client_credentials")
-            request["Authorization"] = authorization_header
-
-            response = http.request(request)
           end
 
           @token = JSON.parse(response.body) if response.code == "200"
@@ -29,17 +20,8 @@ module Decidim
         def revoke_token
           return unless @token
 
-          uri = uri_for("revoke")
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = true
-          http.set_debug_output($stdout) if debug
-          response = nil
-          http.start do
-            request = Net::HTTP::Post.new(uri.request_uri)
+          response = Http.new(uri_for("revoke"), authorization: authorization_header, debug: debug).post do |request|
             request.set_form_data("token" => @token["access_token"])
-            request["Authorization"] = @credentials
-
-            response = http.request(request)
           end
           @token = nil if response.code == "200"
           @token
@@ -50,7 +32,7 @@ module Decidim
         attr_reader :debug
 
         def uri_for(action)
-          URI.parse("https://api.opaali.telia.fi/autho4api/v1/#{action}")
+          "https://api.opaali.telia.fi/autho4api/v1/#{action}"
         end
 
         def authorization_header

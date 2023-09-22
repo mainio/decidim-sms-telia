@@ -98,20 +98,12 @@ module Decidim
           # to become active.
           sleep 1
 
-          send_uri = outbound_uri
-          http = Net::HTTP.new(send_uri.host, send_uri.port)
-          http.use_ssl = true
-          http.set_debug_output($stdout) if debug
-          response = nil
-          http.start do
-            request = Net::HTTP::Post.new(send_uri.request_uri)
-            request.body = request_body(delivery)
-            request["Authorization"] = "Bearer #{authorization_token}"
-            request["Accept"] = "application/json"
-            request["Content-Type"] = "application/json"
+          response = Http.new(outbound_uri, authorization: "Bearer #{authorization_token}", debug: debug).post(
+            request_body(delivery),
+            "Accept" => "application/json",
+            "Content-Type" => "application/json"
+          )
 
-            response = http.request(request)
-          end
           token_instance.revoke_token
           if %w(200 201 202).include?(response.code)
             [parse_json(response.body), "sent"]
@@ -151,7 +143,7 @@ module Decidim
         end
 
         def outbound_uri
-          URI.parse("https://api.opaali.telia.fi/#{mode}/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests")
+          "https://api.opaali.telia.fi/#{mode}/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests"
         end
 
         def mode

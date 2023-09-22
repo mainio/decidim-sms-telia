@@ -40,13 +40,14 @@ module Decidim
       class Gateway
         attr_reader :phone_number, :code, :organization, :telia_sender, :telia_sender_name
 
-        def initialize(phone_number, code, organization: nil, queued: false)
+        def initialize(phone_number, code, organization: nil, queued: false, debug: false)
           @phone_number = "tel:#{phone_number}"
           @code = code
           @organization ||= organization
           @telia_sender ||= "tel:#{Rails.application.secrets.telia[:telia_sender_address]}"
           @telia_sender_name ||= Rails.application.secrets.telia[:telia_sender_name]
           @queued = queued
+          @debug = debug
         end
 
         def deliver_code
@@ -65,17 +66,24 @@ module Decidim
 
         private
 
+        attr_reader :debug
+
         def create_message!(callback_data)
           authorization = token_instance.generate_token
           send_uri = set_send_uri
-          response = Net::HTTP.start(send_uri.host, send_uri.port, use_ssl: true) do |http|
+
+          http = Net::HTTP.new(send_uri.host, send_uri.port)
+          http.use_ssl = true
+          http.set_debug_output($stdout) if debug
+          response = nil
+          http.start do
             request = Net::HTTP::Post.new(send_uri.request_uri)
             request.body = request_body(callback_data)
             request["Authorization"] = "Bearer #{authorization}"
             request["Accept"] = "application/json"
             request["Content-Type"] = "application/json"
 
-            http.request(request)
+            response = http.request(request)
           end
           token_instance.revoke_token
           if %w(200 201 202).include?(response.code)
@@ -90,7 +98,7 @@ module Decidim
         end
 
         def token_instance
-          @token_instance ||= TokenManager.new
+          @token_instance ||= TokenManager.new(debug: debug)
         end
 
         def request_body(callback_data)

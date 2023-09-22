@@ -90,7 +90,20 @@ describe Decidim::Sms::Telia::Gateway do
   context "with the sandbox endpoint" do
     let(:api_mode) { "sandbox" }
 
-    it_behaves_like "working messaging API"
+    context "with default behavior" do
+      it_behaves_like "working messaging API"
+    end
+
+    context "when the mode is unknown" do
+      before do
+        telia_secrets = Rails.application.secrets.telia
+        allow(Rails.application.secrets).to receive(:telia).and_return(
+          telia_secrets.merge(mode: "foobar")
+        )
+      end
+
+      it_behaves_like "working messaging API"
+    end
   end
 
   context "with the production endpoint" do
@@ -100,6 +113,19 @@ describe Decidim::Sms::Telia::Gateway do
       allow(Rails.env).to receive(:test?).and_return(false)
     end
 
-    it_behaves_like "working messaging API"
+    context "with default behavior" do
+      it_behaves_like "working messaging API"
+    end
+
+    context "when set through the secrrets" do
+      before do
+        telia_secrets = Rails.application.secrets.telia
+        allow(Rails.application.secrets).to receive(:telia).and_return(
+          telia_secrets.merge(mode: api_mode)
+        )
+      end
+
+      it_behaves_like "working messaging API"
+    end
   end
 end

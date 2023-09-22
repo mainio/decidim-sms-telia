@@ -147,8 +147,13 @@ module Decidim
         end
 
         def mode
-          secrets[:mode].presence ||
-            (Rails.env.development? || Rails.env.test? ? "sandbox" : "production")
+          if secrets[:mode].present?
+            return "production" if secrets[:mode] == "production"
+
+            "sandbox"
+          else
+            Rails.env.development? || Rails.env.test? ? "sandbox" : "production"
+          end
         end
 
         def track_delivery

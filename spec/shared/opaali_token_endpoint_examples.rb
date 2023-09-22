@@ -60,11 +60,24 @@ shared_context "with Telia SMS token endpoint" do
     stub_request(
       :post,
       "https://api.opaali.telia.fi/autho4api/v1/revoke"
-    ).to_return do
-      {
-        body: "",
-        headers: auth_endpoint_headers.merge("Date" => Time.now.httpdate, "Content-Length" => 0)
-      }
+    ).to_return do |request|
+      if request.headers["Authorization"] == "Basic #{Base64.encode64(auth_token_credentials.join(":")).strip}"
+        {
+          body: "",
+          headers: auth_endpoint_headers.merge("Date" => Time.now.httpdate, "Content-Length" => 0)
+        }
+      else
+        body = { error: "invalid_request" }.to_json
+
+        {
+          status: 400,
+          body: body,
+          headers: auth_endpoint_headers.merge(
+            "Date" => Time.now.httpdate,
+            "Content-Length" => body.length
+          )
+        }
+      end
     end
   end
 end

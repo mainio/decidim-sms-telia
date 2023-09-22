@@ -23,8 +23,12 @@ module Decidim
           response = Http.new(uri_for("revoke"), authorization: authorization_header, debug: debug).post do |request|
             request.set_form_data("token" => @token["access_token"])
           end
-          @token = nil if response.code == "200"
-          @token
+          if response.code == "200"
+            @token = nil
+            true
+          else
+            false
+          end
         end
 
         private

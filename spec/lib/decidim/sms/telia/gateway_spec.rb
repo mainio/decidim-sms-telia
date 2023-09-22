@@ -16,26 +16,35 @@ describe Decidim::Sms::Telia::Gateway do
     }
   end
   let(:sender_address) { "tel:#{Rails.application.secrets.telia[:sender_address]}" }
-  let(:resource_url) { "https://api.opaali.telia.fi/production/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests/nnn" }
+  let(:resource_url) { "https://api.opaali.telia.fi/production/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests/12abcdef-abcd-abcd-abcd-123456abcdef" }
+  let(:authorization_token) { "abcdef1234567890" }
 
   before do
     stub_request(
       :post,
       "https://api.opaali.telia.fi/#{api_mode}/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests"
-    ).to_return do
-      body = {
-        resourceReference: {
-          resourceURL: resource_url
-        }
-      }.to_json
+    ).to_return do |request|
+      if request.headers["Authorization"] == "Bearer #{authorization_token}"
+        body = {
+          resourceReference: {
+            resourceURL: resource_url
+          }
+        }.to_json
 
-      {
-        body: body,
-        headers: api_response_headers.merge(
-          "Date" => Time.now.httpdate,
-          "Location" => resource_url
-        )
-      }
+        {
+          body: body,
+          headers: api_response_headers.merge(
+            "Date" => Time.now.httpdate,
+            "Location" => resource_url
+          )
+        }
+      else
+        {
+          status: 403,
+          body: "",
+          headers: api_response_headers.merge("Date" => Time.now.httpdate)
+        }
+      end
     end
   end
 
@@ -50,7 +59,7 @@ describe Decidim::Sms::Telia::Gateway do
       it { is_expected.to be(true) }
 
       it "creates a new delivery" do
-        expect { gateway.deliver_code }.to change(Decidim::Sms::Telia::Delivery, :count).by(1)
+        expect { subject }.to change(Decidim::Sms::Telia::Delivery, :count).by(1)
 
         delivery = Decidim::Sms::Telia::Delivery.last
         expect(delivery.to).to eq(phone_number)
@@ -58,6 +67,22 @@ describe Decidim::Sms::Telia::Gateway do
         expect(delivery.status).to eq("sent")
         expect(delivery.resource_url).to eq(resource_url)
         expect(delivery.callback_data).to match(/[a-zA-Z0-9]{32}/)
+      end
+
+      context "with incorrect credentials" do
+        let(:auth_token_credentials) { %w(foo bar) }
+
+        it "raises a TeliaAuthenticationError" do
+          expect { subject }.to raise_error(Decidim::Sms::Telia::TeliaAuthenticationError)
+        end
+      end
+
+      context "with invalid authorization token" do
+        let(:authorization_token) { "foobar" }
+
+        it "raises a TeliaServerError" do
+          expect { subject }.to raise_error(Decidim::Sms::Telia::TeliaServerError)
+        end
       end
     end
   end

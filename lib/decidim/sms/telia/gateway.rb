@@ -43,6 +43,12 @@ module Decidim
         end
       end
 
+      class TeliaAuthenticationError < GatewayError
+        def initialize(message = "Unauthorized")
+          super(message, :unauthorized)
+        end
+      end
+
       class Gateway
         attr_reader :phone_number, :code, :organization, :sender_address, :sender_name
 
@@ -59,7 +65,9 @@ module Decidim
         def deliver_code
           track_delivery do |delivery|
             response, status = create_message!(delivery)
-            resource_url = response&.dig("resourceReference", "resourceURL")
+            return false unless response
+
+            resource_url = response.dig("resourceReference", "resourceURL")
 
             delivery.update!(
               resource_url: resource_url,
@@ -80,6 +88,10 @@ module Decidim
 
         def create_message!(delivery)
           authorization_token = token_instance.generate_token
+          unless authorization_token
+            Rails.logger.error "Telia error -- Invalid username or password"
+            raise TeliaAuthenticationError
+          end
 
           # Suggestion from Telia is to have a short delay before utilizing this
           # token against the messaging API. It may take a while for the token
@@ -107,8 +119,8 @@ module Decidim
             handle_policy_exception(parse_json(response.body))
           end
         rescue JSON::ParserError => e
-          log_server_error("Json parse error from server", e.code, response.code)
-          raise TeliaServerError.new("JSON::ParserError server error from telia", e.code)
+          log_server_error("Json parse error from server", e.message, response.code)
+          raise TeliaServerError.new("JSON::ParserError server error from telia", e.message)
         end
 
         def parse_json(response)

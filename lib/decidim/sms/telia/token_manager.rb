@@ -23,7 +23,7 @@ module Decidim
           end
 
           @token = JSON.parse(response.body) if response.code == "200"
-          @token["access_token"]
+          @token["access_token"] if @token
         end
 
         def revoke_token

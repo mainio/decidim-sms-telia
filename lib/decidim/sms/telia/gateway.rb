@@ -90,7 +90,7 @@ module Decidim
             handle_policy_exception(parse_json(response.body))
           end
         rescue JSON::ParserError => e
-          log_server_error("Json parse error from server", e.code)
+          log_server_error("Json parse error from server", e.code, response.code)
           raise TeliaServerError.new("JSON::ParserError server error from telia", e.code)
         end
 
@@ -144,7 +144,7 @@ module Decidim
           exception_code = response.dig("requestError", "policyException", "messageId")
           exeption_text = response.dig("requestError", "policyException", "variables")
 
-          log_policy_error(policy_error(exeption_text), exception_code)
+          log_policy_error(policy_error(exeption_text), exception_code, response.code)
 
           enque_message_delivery if exception_code == "POL3003"
           raise TeliaPolicyError.new("Telia Policy error", exception_code)
@@ -158,19 +158,20 @@ module Decidim
           end
         end
 
-        def log_policy_error(message, code)
+        def log_policy_error(message, code, http_resp_code)
           Rails.logger.error "Telia error -- Telia failed to deliver the code"
-          log_base_error(message, code)
+          log_base_error(message, code, http_resp_code)
         end
 
-        def log_base_error(message, code)
+        def log_base_error(message, code, http_resp_code)
           Rails.logger.error "Telia Error: #{code}"
+          Rails.logger.error "Http response code: #{http_resp_code}"
           Rails.logger.error message
         end
 
-        def log_server_error(message, code)
+        def log_server_error(message, code, http_resp_code)
           Rails.logger.error "Telia server error -- Telia failed to deliver the code"
-          log_base_error(message, code)
+          log_base_error(message, code, http_resp_code)
         end
 
         def enque_message_delivery

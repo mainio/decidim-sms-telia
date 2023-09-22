@@ -4,49 +4,9 @@ require "spec_helper"
 
 describe Decidim::Sms::Telia::Gateway do
   include_context "with Telia SMS token endpoint"
+  include_context "with Telia Messaging endpoint"
 
   let(:organization) { create(:organization) }
-  let(:api_response_headers) do
-    {
-      "Content-Type" => "application/json;charset=utf-8",
-      "Transfer-Encoding" => "chunked",
-      "Connection" => "keep-alive",
-      "Accept" => "application/json;charset=utf-8",
-      "Server" => "Operator Service Platform"
-    }
-  end
-  let(:sender_address) { "tel:#{Rails.application.secrets.telia[:sender_address]}" }
-  let(:resource_url) { "https://api.opaali.telia.fi/production/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests/12abcdef-abcd-abcd-abcd-123456abcdef" }
-  let(:authorization_token) { "abcdef1234567890" }
-
-  before do
-    stub_request(
-      :post,
-      "https://api.opaali.telia.fi/#{api_mode}/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests"
-    ).to_return do |request|
-      if request.headers["Authorization"] == "Bearer #{authorization_token}"
-        body = {
-          resourceReference: {
-            resourceURL: resource_url
-          }
-        }.to_json
-
-        {
-          body: body,
-          headers: api_response_headers.merge(
-            "Date" => Time.now.httpdate,
-            "Location" => resource_url
-          )
-        }
-      else
-        {
-          status: 403,
-          body: "",
-          headers: api_response_headers.merge("Date" => Time.now.httpdate)
-        }
-      end
-    end
-  end
 
   shared_examples "working messaging API" do
     let(:gateway) { described_class.new(phone_number, message, organization: organization) }
@@ -82,6 +42,44 @@ describe Decidim::Sms::Telia::Gateway do
 
         it "raises a TeliaServerError" do
           expect { subject }.to raise_error(Decidim::Sms::Telia::TeliaServerError)
+        end
+      end
+
+      context "with policy errors" do
+        {
+          "POL3003" => :server_busy,
+          "POL3101" => :invalid_to_number,
+          "POL3006" => :destination_whitelist,
+          "POL3007" => :destination_blacklist
+        }.each do |code, error|
+          context "when #{code}" do
+            let(:messaging_api_policy_exception) { code }
+            let(:gateway_error) { error }
+
+            it "throws a TeliaPolicyError" do
+              expect { subject }.to raise_error(Decidim::Sms::Telia::TeliaPolicyError)
+
+              begin
+                subject
+              rescue Decidim::Sms::Telia::TeliaPolicyError => e
+                expect(e.error_code).to be(gateway_error)
+              end
+            end
+          end
+        end
+
+        context "when unknown" do
+          let(:messaging_api_policy_exception) { "POL9999" }
+
+          it "throws a TeliaPolicyError" do
+            expect { subject }.to raise_error(Decidim::Sms::Telia::TeliaPolicyError)
+
+            begin
+              subject
+            rescue Decidim::Sms::Telia::TeliaPolicyError => e
+              expect(e.error_code).to be(:unknown)
+            end
+          end
         end
       end
     end

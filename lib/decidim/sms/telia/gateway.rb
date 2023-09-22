@@ -108,7 +108,7 @@ module Decidim
           if %w(200 201 202).include?(response.code)
             [parse_json(response.body), "sent"]
           else
-            handle_policy_exception(parse_json(response.body))
+            handle_policy_exception(response)
           end
         rescue JSON::ParserError => e
           log_server_error("Json parse error from server", e.message, response.code)
@@ -169,20 +169,24 @@ module Decidim
         end
 
         def handle_policy_exception(response)
-          exception_code = response.dig("requestError", "policyException", "messageId")
-          exeption_text = response.dig("requestError", "policyException", "variables")
+          response_body = parse_json(response.body)
+          message_id = response_body.dig("requestError", "policyException", "messageId")
+          message_text = response_body.dig("requestError", "policyException", "text")
+          message_variables = response_body.dig("requestError", "policyException", "variables")
 
-          log_policy_error(policy_error(exeption_text), exception_code, response.code)
+          log_policy_error(policy_error(message_text, message_variables), message_id, response.code)
 
-          enque_message_delivery if exception_code == "POL3003"
-          raise TeliaPolicyError.new("Telia Policy error", exception_code)
+          enque_message_delivery if message_id == "POL3003"
+          raise TeliaPolicyError.new("Telia Policy error", message_id)
         end
 
-        def policy_error(explanation)
-          if explanation
-            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: explanation[0], code: explanation[1])
+        def policy_error(text, variables = nil)
+          if text && variables.is_a?(Array)
+            code = variables.last
+            message = format(text.gsub(/%[0-9]+/, "%s"), *variables)
+            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: message, code: code)
           else
-            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: "", code: "")
+            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: text, code: "")
           end
         end
 

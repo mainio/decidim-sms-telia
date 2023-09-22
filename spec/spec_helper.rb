@@ -11,6 +11,8 @@ require "decidim/dev/test/base_spec_helper"
 
 RSpec.configure do |config|
   config.before do
+    allow(Decidim.config).to receive(:sms_gateway_service).and_return("Decidim::Sms::Telia::Gateway")
+
     Rails.application.secrets.telia = {
       sender_address: "+358000000000",
       sender_name: "Mainio",

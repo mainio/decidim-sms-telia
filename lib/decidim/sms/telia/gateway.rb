@@ -44,14 +44,14 @@ module Decidim
       end
 
       class Gateway
-        attr_reader :phone_number, :code, :organization, :telia_sender, :telia_sender_name
+        attr_reader :phone_number, :code, :organization, :sender_address, :sender_name
 
         def initialize(phone_number, code, organization: nil, queued: false, debug: false)
           @phone_number = "tel:#{phone_number}"
           @code = code
           @organization ||= organization
-          @telia_sender ||= "tel:#{Rails.application.secrets.telia[:telia_sender_address]}"
-          @telia_sender_name ||= Rails.application.secrets.telia[:telia_sender_name]
+          @sender_address ||= "tel:#{secrets[:sender_address]}"
+          @sender_name ||= secrets[:sender_name]
           @queued = queued
           @debug = debug
         end
@@ -70,14 +70,33 @@ module Decidim
           true
         end
 
+        def notify_token_for(delivery, number)
+          Digest::MD5.hexdigest(
+            [
+              delivery.id.to_s,
+              number,
+              Rails.application.secrets.secret_key_base
+            ].join(":")
+          )
+        end
+
         private
 
         attr_reader :debug
 
-        def create_message!(callback_data)
-          authorization = token_instance.generate_token
-          send_uri = set_send_uri
+        def secrets
+          Rails.application.secrets.telia
+        end
 
+        def create_message!(callback_data)
+          authorization_token = token_instance.generate_token
+
+          # Suggestion from Telia is to have a short delay before utilizing this
+          # token against the messaging API. It may take a while for the token
+          # to become active.
+          sleep 1
+
+          send_uri = outbound_uri
           http = Net::HTTP.new(send_uri.host, send_uri.port)
           http.use_ssl = true
           http.set_debug_output($stdout) if debug
@@ -85,7 +104,7 @@ module Decidim
           http.start do
             request = Net::HTTP::Post.new(send_uri.request_uri)
             request.body = request_body(callback_data)
-            request["Authorization"] = "Bearer #{authorization}"
+            request["Authorization"] = "Bearer #{authorization_token}"
             request["Accept"] = "application/json"
             request["Content-Type"] = "application/json"
 
@@ -114,26 +133,28 @@ module Decidim
           {
             "outboundMessageRequest" => {
               "address" => [phone_number],
-              "senderName" => telia_sender_name,
-              "senderAddress" => telia_sender,
+              "senderName" => sender_name,
+              "senderAddress" => sender_address,
               "outboundSMSTextMessage" => { "message" => code },
               "receiptRequest" => {
                 "notifyURL" => Decidim::EngineRouter.new(
                   "decidim_sms_telia",
                   { host: organization.host }
-                ).delivery_url(callback_data: callback_data),
-                "notificationFormat" => "JSON"
+                ).delivery_url(delivery.id),
+                "notificationFormat" => "JSON",
+                "callbackData" => callback_data
               }
             }
           }.to_json
         end
 
-        def set_send_uri
+        def outbound_uri
           URI.parse("https://api.opaali.telia.fi/#{mode}/messaging/v1/outbound/#{CGI.escape(telia_sender)}/requests")
         end
 
         def mode
-          Rails.env.development? ? "sandbox" : "production"
+          secrets[:mode].presence ||
+            (Rails.env.development? || Rails.env.test? ? "sandbox" : "production")
         end
 
         def track_delivery

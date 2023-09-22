@@ -11,14 +11,12 @@ module Decidim
         isolate_namespace Decidim::Sms::Telia
 
         routes do
-          scope "/sms/telia" do
-            match :delivery, to: "deliveries#update", via: [:get, :post]
-          end
+          post "deliveries/:id", to: "deliveries#update", as: :delivery
         end
 
         initializer "sms_telia.mount_routes" do
           Decidim::Core::Engine.routes do
-            mount Decidim::Sms::Telia::Engine => "/"
+            mount Decidim::Sms::Telia::Engine => "/sms/telia"
           end
         end
 

@@ -14,7 +14,7 @@ module Decidim
         def update
           raise ActionController::RoutingError, "Not Found" unless delivery
           raise ActionController::RoutingError, "Not Found" unless delivery_info
-          return render body: nil, status: :forbidden, content_type: "application/json" if delivery.callback_data != delivery_info["callbackData"]
+          return render body: nil, status: :forbidden, content_type: "application/json" if delivery.callback_data != message["callbackData"]
 
           delivery.update!(status: delivery_info["deliveryStatus"].underscore) if delivery_info["deliveryStatus"].present?
 
@@ -39,8 +39,9 @@ module Decidim
             msg = Nokogiri::XML.parse(request.body)
             if msg.at("//deliveryInfo")
               {
+                "callbackData" => msg.at("//callbackData")&.text,
                 "deliveryInfo" => (
-                  %w(address deliveryStatus callbackData).index_with do |key|
+                  %w(address deliveryStatus).index_with do |key|
                     msg.at("//deliveryInfo/#{key}")&.text
                   end
                 )

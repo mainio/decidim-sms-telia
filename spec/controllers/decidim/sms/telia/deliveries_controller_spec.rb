@@ -63,10 +63,10 @@ describe Decidim::Sms::Telia::DeliveriesController, type: :controller do
         <<~XML.squish
           <?xml version="1.0" encoding="UTF-8"?>
           <msg:deliveryInfoNotification xmlns:msg="urn:oma:xml:rest:netapi:messaging:1">
+            <callbackData>#{callback_data}</callbackData>
             <deliveryInfo>
               <address>tel:#{delivery.to}</address>
               <deliveryStatus>#{notification_status}</deliveryStatus>
-              <callbackData>#{callback_data}</callbackData>
             </deliveryInfo>
             <link rel="OutboundMessageRequest" href="https://api.opaali.telia.fi/production/messaging/v1/outbound/tel%3A%2B358000000000/requests/12abcdef-abcd-abcd-abcd-123456abcdef"/>
           </msg:deliveryInfoNotification>
@@ -96,10 +96,10 @@ describe Decidim::Sms::Telia::DeliveriesController, type: :controller do
     context "when valid delivery data as JSON" do
       let(:notification_body) do
         {
+          "callbackData" => callback_data,
           "deliveryInfo" => {
             "address" => "tel:#{delivery.to}",
-            "deliveryStatus" => notification_status,
-            "callbackData" => callback_data
+            "deliveryStatus" => notification_status
           },
           "link" => {
             "rel" => "OutboundMessageRequest",

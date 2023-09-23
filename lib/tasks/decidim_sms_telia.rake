@@ -5,7 +5,12 @@ namespace :decidim do
     desc "Test sending of the SMS"
     task :test, [:organization, :number] => :environment do |_t, args|
       unless Decidim.config.sms_gateway_service
-        puts "The gateway has not been configured. Please review the initializer code."
+        puts "The SMS gateway has not been configured. Please review your initializer code."
+        next
+      end
+      if Decidim.config.sms_gateway_service != "Decidim::Sms::Telia::Gateway"
+        puts "The Telia SMS gateway is not currently configured. Please review your initializer code."
+        puts "Configured gateway is: #{Decidim.config.sms_gateway_service}"
         next
       end
 

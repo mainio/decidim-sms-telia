@@ -14,17 +14,17 @@ module Decidim
           # The cache expiry period is set according to the token validity
           # period at Telia's end which is actually "59999" but we use a bit
           # shorter time to avoid issues using a token at its expiration time.
-          token = Rails.cache.fetch("decidim/sms/telia/token", expires_in: 59_900.seconds) do
+          @token = Rails.cache.fetch("decidim/sms/telia/token", expires_in: 59_900.seconds) do
             # In case the token request does not return a token e.g. because of
             # invalid credentials, we need to return here in order to avoid an
             # infinite recursion.
             request || return
           end
-          return token if token.valid?
+          return @token if @token.valid?
 
           # Just in case, revoke the previous token before requesting a new
           # token.
-          revoke(token)
+          revoke(@token)
 
           # Re-fetch a new token and cache it.
           fetch
@@ -39,7 +39,7 @@ module Decidim
           # Suggestion from Telia is to have a short delay before utilizing this
           # token against the messaging API. It may take a while for the token
           # to become active.
-          sleep 1
+          sleep 2
 
           Token.from(response)
         end
@@ -53,6 +53,14 @@ module Decidim
             req.set_form_data("token" => token.access_token)
           end
           response.code == "200"
+        end
+
+        def revoke_cached_token
+          token = @token || Rails.cache.read("decidim/sms/telia/token")
+          return false unless token
+
+          @token = nil
+          revoke(token)
         end
 
         private

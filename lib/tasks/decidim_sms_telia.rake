@@ -23,8 +23,10 @@ namespace :decidim do
 
       message = "Test message from Decidim."
       gateway = Decidim.config.sms_gateway_service.constantize.new(number, message, organization: organization, debug: true)
+      result = gateway.deliver_code
+      gateway.sign_out
 
-      if gateway.deliver_code
+      if result
         puts "The test message has been successfully sent to: #{number}"
       else
         puts "Failed to deliver message to '#{number}'. Please double check the provided phone number."

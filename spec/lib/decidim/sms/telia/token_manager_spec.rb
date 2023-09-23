@@ -107,4 +107,36 @@ describe Decidim::Sms::Telia::TokenManager do
       end
     end
   end
+
+  describe "#revoke_cached_token" do
+    subject { manager.revoke_cached_token }
+
+    context "when the token has not been cached" do
+      it { is_expected.to be(false) }
+    end
+
+    context "when the token has been locally cached" do
+      let(:token) { manager.fetch }
+
+      it "revokes the token" do
+        expect(manager).to receive(:revoke).with(token).and_call_original
+        expect(subject).to be(true)
+      end
+    end
+
+    context "when the token has been cached through the rails cache" do
+      let(:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
+      let(:token) { manager.request }
+
+      before do
+        allow(Rails).to receive(:cache).and_return(memory_store)
+        Rails.cache.write("decidim/sms/telia/token", token)
+      end
+
+      it "revokes the cached token" do
+        expect(Rails.cache).to receive(:read).and_call_original
+        expect(subject).to be(true)
+      end
+    end
+  end
 end

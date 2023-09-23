@@ -78,6 +78,10 @@ module Decidim
           true
         end
 
+        def sign_out
+          token_manager.revoke_cached_token
+        end
+
         private
 
         attr_reader :debug

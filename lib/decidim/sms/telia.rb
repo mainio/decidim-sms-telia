@@ -8,6 +8,7 @@ module Decidim
     module Telia
       autoload :Gateway, "decidim/sms/telia/gateway"
       autoload :Http, "decidim/sms/telia/http"
+      autoload :Token, "decidim/sms/telia/token"
       autoload :TokenManager, "decidim/sms/telia/token_manager"
 
       include ActiveSupport::Configurable

@@ -87,24 +87,18 @@ module Decidim
         end
 
         def create_message!(delivery)
-          authorization_token = token_instance.generate_token
-          unless authorization_token
+          token = token_manager.fetch
+          unless token
             Rails.logger.error "Telia error -- Invalid username or password"
             raise TeliaAuthenticationError
           end
 
-          # Suggestion from Telia is to have a short delay before utilizing this
-          # token against the messaging API. It may take a while for the token
-          # to become active.
-          sleep 1
-
-          response = Http.new(outbound_uri, authorization: "Bearer #{authorization_token}", debug: debug).post(
+          response = Http.new(outbound_uri, authorization: token.authorization_header, debug: debug).post(
             request_body(delivery),
             "Accept" => "application/json",
             "Content-Type" => "application/json"
           )
 
-          token_instance.revoke_token
           if %w(200 201 202).include?(response.code)
             [parse_json(response.body), "sent"]
           else
@@ -119,8 +113,8 @@ module Decidim
           JSON.parse(response)
         end
 
-        def token_instance
-          @token_instance ||= TokenManager.new(debug: debug)
+        def token_manager
+          @token_manager ||= TokenManager.new(debug: debug)
         end
 
         def request_body(delivery)

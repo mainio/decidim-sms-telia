@@ -182,9 +182,9 @@ module Decidim
           if text && variables.is_a?(Array)
             code = variables.last
             message = format(text.gsub(/%[0-9]+/, "%s"), *variables)
-            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: message, code: code)
+            "Failed to send the SMS message. #{message} (#{code})"
           else
-            I18n.t("policy_error", scope: "decidim.sms.telia.gateway.errors", message: text, code: "")
+            "Failed to send the SMS message. #{text}"
           end
         end
 

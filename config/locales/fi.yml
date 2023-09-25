@@ -1,8 +1,0 @@
----
-fi:
-  decidim:
-    sms:
-      telia:
-        gateway:
-          errors:
-            policy_error: "Tekstiviestin lähetys epäonnistui. %{message} (%{code})"

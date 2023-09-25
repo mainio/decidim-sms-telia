@@ -1,8 +1,0 @@
----
-en:
-  decidim:
-    sms:
-      telia:
-        gateway:
-          errors:
-            policy_error: "Failed to send the SMS message. %{message} (%{code})"

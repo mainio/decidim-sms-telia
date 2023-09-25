@@ -11,21 +11,16 @@ module Decidim
         # Fetches a valid token either from cache or by requesting it from the
         # server if there is no cached token or the token has expired.
         def fetch
-          # The cache expiry period is set according to the token validity
-          # period at Telia's end which is actually "59999" but we use a bit
-          # shorter time to avoid issues using a token at its expiration time.
-          @token ||= Rails.cache.fetch("decidim/sms/telia/token", expires_in: 59_900.seconds) do
-            # In case the token request does not return a token e.g. because of
-            # invalid credentials, we need to return here in order to avoid an
-            # infinite recursion.
-            request || return
-          end
-          return @token if @token.valid?
+          token ||= Token.current || request
+
+          # If the token is not set, it means that the token endpoint response
+          # was not expected and probably the credentials are incorrect.
+          return unless token
+          return token unless token.expired?
 
           # Just in case, revoke the previous token before requesting a new
           # token.
-          revoke(@token)
-          @token = nil
+          revoke(token)
 
           # Re-fetch a new token and cache it.
           fetch
@@ -46,21 +41,17 @@ module Decidim
         end
 
         def revoke(token)
-          # Clear the cached token because it is no longer valid after it is
-          # revoked.
-          Rails.cache.delete("decidim/sms/telia/token")
-
           response = Http.new(uri_for("revoke"), authorization: authorization_header, debug: debug).post do |req|
             req.set_form_data("token" => token.access_token)
           end
+          token.destroy
           response.code == "200"
         end
 
         def revoke_cached_token
-          token = @token || Rails.cache.read("decidim/sms/telia/token")
+          token = Token.current
           return false unless token
 
-          @token = nil
           revoke(token)
         end
 

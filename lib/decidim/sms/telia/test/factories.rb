@@ -14,7 +14,6 @@ module Decidim
 end
 
 FactoryBot.define do
-  # Add engine factories here
   factory :telia_sms_delivery, class: "Decidim::Sms::Telia::Delivery" do
     from { Faker::PhoneNumber.cell_phone_in_e164 }
     to { Faker::PhoneNumber.cell_phone_in_e164 }
@@ -25,5 +24,11 @@ FactoryBot.define do
     trait :sent do
       status { "sent" }
     end
+  end
+
+  factory :telia_sms_token, class: "Decidim::Sms::Telia::Token" do
+    access_token { "abcdef1234567890" }
+    issued_at { Time.zone.now }
+    expires_at { issued_at + 9.minutes }
   end
 end

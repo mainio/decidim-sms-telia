@@ -32,38 +32,36 @@ describe Decidim::Sms::Telia::TokenManager do
 
     it_behaves_like "valid token"
 
-    context "with caching" do
-      let(:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
+    context "when the token has been already fetched" do
+      let!(:token) { create(:telia_sms_token) }
 
-      before do
-        allow(Rails).to receive(:cache).and_return(memory_store)
+      it "has the correct token" do
+        expect(subject.to_s).to eq("abcdef1234567890")
+
+        expect(Decidim::Sms::Telia::Token.count).to eq(1)
       end
 
-      it_behaves_like "valid token"
+      it "does not re-request the token" do
+        expect(manager).not_to receive(:request)
+        expect(subject).to be_a(Decidim::Sms::Telia::Token)
+        expect(Decidim::Sms::Telia::Token.count).to eq(1)
+      end
 
-      context "when the token has been cached" do
-        before { manager.fetch }
-
-        it "stores the cached token" do
-          expect(Rails.cache.read("decidim/sms/telia/token")).to be_a(Decidim::Sms::Telia::Token)
+      context "and the existing token has expired" do
+        before do
+          token.update!(expires_at: 1.hour.ago)
         end
 
-        it "does not re-request the token" do
-          expect(manager).not_to receive(:request)
-          expect(subject).to be_a(Decidim::Sms::Telia::Token)
+        it "requests a new token" do
+          expect(manager).to receive(:request).and_call_original
+          expect(subject.expired?).to be(false)
+          expect(Decidim::Sms::Telia::Token.count).to eq(1)
         end
 
-        context "and the cached token has expired" do
-          before do
-            token = manager.fetch
-            token.instance_variable_set(:@expires_at, 1.hour.ago)
-            Rails.cache.write("decidim/sms/telia/token", token)
-          end
+        context "with incorrect credentials" do
+          let(:auth_token_credentials) { %w(foo bar) }
 
-          it "requests a new token" do
-            expect(manager).to receive(:request).and_call_original
-            expect(subject.expired?).to be(false)
-          end
+          it { is_expected.to be_nil }
         end
       end
     end
@@ -120,21 +118,6 @@ describe Decidim::Sms::Telia::TokenManager do
 
       it "revokes the token" do
         expect(manager).to receive(:revoke).with(token).and_call_original
-        expect(subject).to be(true)
-      end
-    end
-
-    context "when the token has been cached through the rails cache" do
-      let(:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
-      let(:token) { manager.request }
-
-      before do
-        allow(Rails).to receive(:cache).and_return(memory_store)
-        Rails.cache.write("decidim/sms/telia/token", token)
-      end
-
-      it "revokes the cached token" do
-        expect(Rails.cache).to receive(:read).and_call_original
         expect(subject).to be(true)
       end
     end

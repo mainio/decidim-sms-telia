@@ -32,11 +32,6 @@ module Decidim
           end
           return if response.code != "200"
 
-          # Suggestion from Telia is to have a short delay before utilizing this
-          # token against the messaging API. It may take a while for the token
-          # to become active.
-          sleep 2
-
           Token.from(response)
         end
 

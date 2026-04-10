@@ -17,6 +17,9 @@ gem "decidim-sms-telia", path: "."
 
 gem "bootsnap", "~> 1.4"
 
+# This locks nokogiri to a version < 1.17 so it doesn't cause issues
+gem "nokogiri", "1.16.8"
+
 gem "puma", ">= 5.6.2"
 
 gem "faker", "~> 3.2"
@@ -36,12 +39,14 @@ group :development, :test do
   gem "rubocop-rspec", "2.20"
 
   gem "rubocop-faker"
+
+  # Fix issue with simplecov-cobertura
+  # See: https://github.com/jessebs/simplecov-cobertura/pull/44
+  gem "rexml", "3.4.1"
 end
 
 group :development do
   gem "letter_opener_web", "~> 2.0"
   gem "listen", "~> 3.1"
-  gem "spring", "~> 2.0"
-  gem "spring-watcher-listen", "~> 2.0"
   gem "web-console", "~> 4.2"
 end

@@ -108,7 +108,7 @@ describe Decidim::Sms::Telia::Gateway do
     let(:api_mode) { "production" }
 
     before do
-      allow(Rails.env).to receive(:test?).and_return(false)
+      allow(Rails.env).to receive(:local?).and_return(false)
     end
 
     context "with default behavior" do

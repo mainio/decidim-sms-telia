@@ -25,6 +25,7 @@ group :development, :test do
   gem "byebug", "~> 11.0", platform: :mri
 
   gem "decidim-dev", DECIDIM_VERSION
+  gem "decidim-initiatives", DECIDIM_VERSION
 
   gem "brakeman", "~> 5.2"
   gem "parallel_tests", "~> 4.2"

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 shared_context "with Telia Messaging endpoint" do
-  let(:sender_address) { "tel:#{Rails.application.secrets.telia[:sender_address]}" }
+  let(:sender_address) { "tel:#{Rails.application.config.telia[:sender_address]}" }
   let(:authorization_token) { "abcdef1234567890" }
   let(:resource_url) { "https://api.opaali.telia.fi/production/messaging/v1/outbound/#{CGI.escape(sender_address)}/requests/12abcdef-abcd-abcd-abcd-123456abcdef" }
 

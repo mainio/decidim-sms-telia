@@ -23,7 +23,7 @@ describe Decidim::Sms::Telia::Gateway do
 
         delivery = Decidim::Sms::Telia::Delivery.last
         expect(delivery.to).to eq(phone_number)
-        expect(delivery.from).to eq(Rails.application.secrets.telia[:sender_address])
+        expect(delivery.from).to eq(Rails.application.config.telia[:sender_address])
         expect(delivery.status).to eq("sent")
         expect(delivery.resource_url).to eq(resource_url)
         expect(delivery.callback_data).to match(/[a-zA-Z0-9]{32}/)
@@ -94,8 +94,8 @@ describe Decidim::Sms::Telia::Gateway do
 
     context "when the mode is unknown" do
       before do
-        telia_secrets = Rails.application.secrets.telia
-        allow(Rails.application.secrets).to receive(:telia).and_return(
+        telia_secrets = Rails.application.config.telia
+        allow(Rails.application.config).to receive(:telia).and_return(
           telia_secrets.merge(mode: "foobar")
         )
       end
@@ -117,8 +117,8 @@ describe Decidim::Sms::Telia::Gateway do
 
     context "when set through the secrrets" do
       before do
-        telia_secrets = Rails.application.secrets.telia
-        allow(Rails.application.secrets).to receive(:telia).and_return(
+        telia_secrets = Rails.application.config.telia
+        allow(Rails.application.config).to receive(:telia).and_return(
           telia_secrets.merge(mode: api_mode)
         )
       end

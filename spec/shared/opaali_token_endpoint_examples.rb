@@ -14,8 +14,8 @@ shared_context "with Telia SMS token endpoint" do
   let(:auth_token_expiration_time) { token_generation_time + token_expires_in.seconds }
   let(:auth_token_credentials) do
     [
-      Rails.application.secrets.telia[:username],
-      Rails.application.secrets.telia[:password]
+      Rails.application.config.telia[:username],
+      Rails.application.config.telia[:password]
     ]
   end
 

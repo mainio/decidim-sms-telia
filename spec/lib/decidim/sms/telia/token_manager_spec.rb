@@ -95,7 +95,7 @@ describe Decidim::Sms::Telia::TokenManager do
           # Make sure the correct credentials are stored for the API.
           auth_token_credentials
 
-          allow(Rails.application.secrets).to receive(:telia).and_return(
+          allow(Rails.application.config).to receive(:telia).and_return(
             username: "foo",
             password: "bar"
           )

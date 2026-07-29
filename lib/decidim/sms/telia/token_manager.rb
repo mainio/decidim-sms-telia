@@ -64,8 +64,8 @@ module Decidim
 
         def credentials
           [
-            Rails.application.secrets.telia[:username],
-            Rails.application.secrets.telia[:password]
+            Rails.application.config.telia[:username],
+            Rails.application.config.telia[:password]
           ]
         end
       end

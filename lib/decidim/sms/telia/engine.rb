@@ -23,10 +23,6 @@ module Decidim
         initializer "sms_telia.configure_gateway", before: :load_config_initializers do
           Decidim.config.sms_gateway_service = "Decidim::Sms::Telia::Gateway"
         end
-
-        initializer "sms_telia.webpacker.assets_path" do
-          Decidim.register_assets_path File.expand_path("app/packs", root)
-        end
       end
     end
   end

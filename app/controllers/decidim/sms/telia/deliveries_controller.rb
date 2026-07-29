@@ -24,7 +24,7 @@ module Decidim
         private
 
         def delivery
-          match = request.path.match(%r{^/deliveries/([0-9]+)})
+          match = request.path.match(%r{/sms/telia/deliveries/([0-9]+)})
           return unless match
 
           @delivery ||= Delivery.find_by(id: match[1])

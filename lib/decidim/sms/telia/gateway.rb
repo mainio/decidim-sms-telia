@@ -87,7 +87,7 @@ module Decidim
         attr_reader :debug
 
         def secrets
-          Rails.application.secrets.telia
+          Rails.application.config.telia
         end
 
         def create_message!(delivery)
@@ -150,7 +150,7 @@ module Decidim
 
             "sandbox"
           else
-            Rails.env.development? || Rails.env.test? ? "sandbox" : "production"
+            Rails.env.local? ? "sandbox" : "production"
           end
         end
 

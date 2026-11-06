@@ -11,6 +11,8 @@ module Decidim
         skip_before_action :verify_authenticity_token, :store_machine_translations_toggle
         skip_around_action :switch_locale, :use_organization_time_zone
 
+        # Authorization check is not needed here
+        # rubocop:disable Decidim/EnforcePermissionTo
         def update
           raise ActionController::RoutingError, "Not Found" unless delivery
           raise ActionController::RoutingError, "Not Found" unless delivery_info
@@ -20,6 +22,7 @@ module Decidim
 
           head :no_content
         end
+        # rubocop:enable Decidim/EnforcePermissionTo
 
         private
 
